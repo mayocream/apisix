@@ -164,6 +164,7 @@ end
 
 function _M.read_yaml_conf(apisix_home)
     if apisix_home then
+        -- 绑定 home 执行目录
         profile.apisix_home = apisix_home .. "/"
     end
 

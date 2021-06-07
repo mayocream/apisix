@@ -30,7 +30,11 @@ local package = package
 return function (apisix_home, pkg_cpath_org, pkg_path_org)
     -- only for developer, use current folder as working space
     local is_root_path = false
+    -- lua cli 执行的 script 路径
+    -- ref: https://www.lua.org/pil/1.4.html
     local script_path = arg[0]
+    -- 传递进 arg 的执行命令
+    -- 例如 ./bin/apisix 会传递进来
     if script_path:sub(1, 2) == './' then
         apisix_home = util.trim(util.execute_cmd("pwd"))
         if not apisix_home then
@@ -68,6 +72,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         end
     end
 
+    -- 启动 openresty
     local openresty_args = [[openresty -p ]] .. apisix_home .. [[ -c ]]
                            .. apisix_home .. [[/conf/nginx.conf]]
 

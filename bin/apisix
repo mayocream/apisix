@@ -17,6 +17,9 @@
 # limitations under the License.
 #
 
+# 查找 APISIX LUA 包路径
+# shell -s 判断文件是否存在且 size > 0
+# ref: https://stackoverflow.com/questions/53319817/what-is-the-meaning-of-n-z-x-l-d-etc-in-shell-script
 if [ -s './apisix/cli/apisix.lua' ]; then
     # install via source
     APISIX_LUA=./apisix/cli/apisix.lua
@@ -37,6 +40,7 @@ OR_EXEC=${OR_BIN:-'/usr/local/openresty-debug/bin/openresty'}
 OR_VER=$(openresty -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
 LUA_VERSION=$(lua -v 2>&1| grep -E -o  "Lua [0-9]+.[0-9]+")
 
+# shell -e 判断文件是否存在
 if [[ -e $OR_EXEC && "$OR_VER" =~ "1.19" ]]; then
     # OpenResty version is 1.19, use luajit by default
     # find the luajit binary of openresty
@@ -47,6 +51,8 @@ if [[ -e $OR_EXEC && "$OR_VER" =~ "1.19" ]]; then
     exec $LUAJIT_BIN $APISIX_LUA $*
 elif [[ "$LUA_VERSION" =~ "Lua 5.1" ]]; then
     # OpenResty version is not 1.19, use Lua 5.1 by default
+    # shell &* 传递所有 args
+    # ref: https://stackoverflow.com/questions/4824590/propagate-all-arguments-in-a-bash-shell-script
     echo "lua $APISIX_LUA $*"
     exec lua $APISIX_LUA $*
 else
