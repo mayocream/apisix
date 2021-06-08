@@ -86,6 +86,7 @@ stream {
 
     init_by_lua_block {
         require "resty.core"
+        # 全局变量
         apisix = require("apisix")
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
@@ -95,6 +96,7 @@ stream {
     }
 
     init_worker_by_lua_block {
+        # 直接访问全局变量
         apisix.stream_init_worker()
     }
 

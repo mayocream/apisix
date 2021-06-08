@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+-- 定义常量
 return {
     RPC_ERROR = 0,
     RPC_PREPARE_CONF = 1,

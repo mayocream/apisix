@@ -283,6 +283,7 @@ local config_schema = {
 
 
 local function init(env)
+    -- 不允许在 root 下运行
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
               .. 'development environments and it is dangerous to do so. '
@@ -590,9 +591,12 @@ Please modify "admin_key" in conf/config.yaml .
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
 
+    -- ngx 模板
+    -- ref: https://github.com/bungle/lua-resty-template
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
+    -- 根据模板和变量创建 openresty 启动的 conf
     local ok, err = util.write_file(env.apisix_home .. "/conf/nginx.conf",
                                     ngxconf)
     if not ok then
@@ -646,6 +650,7 @@ local function start(env, ...)
               ", the file will be overwritten")
     end
 
+    -- 解析 CLI arguments
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
@@ -672,9 +677,12 @@ local function start(env, ...)
         print("Use customized yaml: ", customized_yaml)
     end
 
+    -- 初始化
     init(env)
+    -- 初始化 ETCD
     init_etcd(env, args)
 
+    -- 启动 openresty
     util.execute_cmd(env.openresty_args)
 end
 

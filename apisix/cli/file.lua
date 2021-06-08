@@ -168,6 +168,7 @@ function _M.read_yaml_conf(apisix_home)
         profile.apisix_home = apisix_home .. "/"
     end
 
+    -- 根据不同的 profile 获取 config
     local local_conf_path = profile:yaml_path("config-default")
     local default_conf_yaml, err = util.read_file(local_conf_path)
     if not default_conf_yaml then

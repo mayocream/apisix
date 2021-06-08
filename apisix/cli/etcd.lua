@@ -94,6 +94,7 @@ local function compare_semantic_version(v1, v2)
 end
 
 
+-- 封装 ETCD 的请求
 local function request(url, yaml_conf)
     local response_body = {}
     local single_request = false
@@ -101,6 +102,7 @@ local function request(url, yaml_conf)
         url = {
             url = url,
             method = "GET",
+            -- 接收返回值的 table
             sink = ltn12.sink.table(response_body),
         }
         single_request = true
@@ -144,6 +146,7 @@ local function request(url, yaml_conf)
 end
 
 
+-- 初始化 ETCD
 function _M.init(env, args)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
@@ -191,6 +194,7 @@ function _M.init(env, args)
         local version_url = host .. "/version"
         local errmsg
 
+        -- 获取 ETCD 版本号
         local res, err = request(version_url, yaml_conf)
         -- In case of failure, request returns nil followed by an error message.
         -- Else the first return value is the response body
@@ -220,6 +224,7 @@ function _M.init(env, args)
     for index, host in ipairs(yaml_conf.etcd.host) do
         local is_success = true
 
+        -- 获取 TOKEN
         local errmsg
         local auth_token
         local user = yaml_conf.etcd.user
@@ -262,6 +267,7 @@ function _M.init(env, args)
         end
 
 
+        -- ETCD 的 PREFIX
         local dirs = {}
         for name in pairs(constants.HTTP_ETCD_DIRECTORY) do
             dirs[name] = true
@@ -273,6 +279,7 @@ function _M.init(env, args)
         for dir_name in pairs(dirs) do
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
 
+            -- API URL
             local put_url = host .. "/v3/kv/put"
             local post_json = '{"value":"' .. base64_encode("init_dir")
                               .. '", "key":"' .. base64_encode(key) .. '"}'

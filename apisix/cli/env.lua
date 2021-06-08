@@ -72,7 +72,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         end
     end
 
-    -- 启动 openresty
+    -- 启动 openresty 的 参数
     local openresty_args = [[openresty -p ]] .. apisix_home .. [[ -c ]]
                            .. apisix_home .. [[/conf/nginx.conf]]
 
