@@ -42,6 +42,7 @@ function _M.find(haystack, needle, from)
 end
 
 
+-- 用 ffi 扩展 string 方法
 function _M.has_prefix(s, prefix)
     if type(s) ~= "string" or type(prefix) ~= "string" then
         error("unexpected type: s:" .. type(s) .. ", prefix:" .. type(prefix))

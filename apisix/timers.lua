@@ -65,7 +65,7 @@ function _M.init_worker()
     local opts = {
         each_ttl = 0,
         sleep_succ = 0,
-        check_interval = check_interval,
+        check_interval = check_interval, -- 默认间隔为 1 秒
     }
     local timer, err = core.timer.new("background", background_timer, opts)
     if not timer then

@@ -58,6 +58,7 @@ function _M.new(prefix)
             method = do_nothing
         else
             method = function(...)
+                -- 用 ... 传递剩余所有所有参数
                 return ngx_log(log_level, prefix, ...)
             end
         end

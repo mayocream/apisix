@@ -21,6 +21,7 @@ local ngx_header = ngx.header
 local ngx_add_header
 if ngx.config.subsystem == "http" then
     local ngx_resp = require "ngx.resp"
+    -- ref: https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/resp.md#synopsis
     ngx_add_header = ngx_resp.add_header
 end
 

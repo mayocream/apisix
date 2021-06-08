@@ -36,8 +36,10 @@ dependencies = {
     "lua-resty-template = 2.0",
     "lua-resty-etcd = 1.5.0",
     "lua-resty-balancer = 0.02rc5",
+    -- ref: https://github.com/api7/apisix-build-tools
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
+    -- 引入了 resty.worker.events
     "lua-resty-healthcheck-api7 = 2.2.0",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-hmac-ffi = 0.05",

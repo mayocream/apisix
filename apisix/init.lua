@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require         = require
+-- patch mTLS 通信
 require("apisix.patch").patch()
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
@@ -44,6 +45,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local control_api_router
 
+-- 判断当前的 nginx subsystem
 local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
@@ -58,6 +60,14 @@ local ver_header = "APISIX/" .. core.version.VERSION
 local _M = {version = 0.4}
 
 
+-- init_by_lua HTTP 模式
+-- 1. 加载 resty.core
+-- 2. ngx.re JIT 缓存参数优化
+-- 3. jit 参数优化
+-- 4. dns client 初始化
+-- 5. 生成节点 id
+-- 6. 开启 openresty 特权进程
+-- 7. 读取配置文件 (本地文件/etcd)
 function _M.http_init(args)
     require("resty.core")
 
@@ -70,14 +80,17 @@ function _M.http_init(args)
                              "maxmcode=4000", "maxirconst=1000")
 
     core.resolver.init_resolver(args)
+    -- 生成节点 ID
     core.id.init()
 
+    -- 启用 openresty 的特权进程
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
     if not ok then
         core.log.error("failed to enable privileged_agent: ", err)
     end
 
+    -- 从 etcd / 本地配置文件获取配置, etcd 有 init 函数
     if core.config.init then
         local ok, err = core.config.init()
         if not ok then
@@ -87,6 +100,7 @@ function _M.http_init(args)
 end
 
 
+-- init_worker_by_lua HTTP 模式
 function _M.http_init_worker()
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
@@ -97,17 +111,23 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- 进程间事件通信
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
         error("failed to init worker event: " .. err)
     end
+    -- 服务发现 lib
     local discovery = require("apisix.discovery.init").discovery
+    -- 默认没有开启服务发现
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
+    -- 初始化负载均衡器, 方法为空
     require("apisix.balancer").init_worker()
+    -- 负载均衡器
     load_balancer = require("apisix.balancer")
+    -- TODO admin 流程分析
     require("apisix.admin.init").init_worker()
 
     require("apisix.timers").init_worker()
@@ -736,6 +756,7 @@ function _M.http_control()
 end
 
 
+-- init_by_lua
 function _M.stream_init(args)
     core.log.info("enter stream_init")
 

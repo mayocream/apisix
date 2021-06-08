@@ -36,6 +36,7 @@ local req_set_uri_args = ngx.req.set_uri_args
 local _M = {}
 
 
+-- 用 ngx.ctx table 缓存 headers, 避免再进行一次 ffi 调用
 local function _headers(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx

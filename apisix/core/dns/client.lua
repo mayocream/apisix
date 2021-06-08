@@ -135,6 +135,7 @@ function _M.new(opts)
     opts.retrans = 5 -- 5 retransmissions on receive timeout
 
     -- make sure each client has its separate room
+    -- 使用 Kong 的 lua-resty-dns-client 包
     package_loaded["resty.dns.client"] = nil
     local dns_client_mod = require("resty.dns.client")
 

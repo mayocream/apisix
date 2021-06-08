@@ -26,6 +26,8 @@ sudo apt-get update
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
+    # 从源码编译 openresty, 增加了 apisix 自己的 nginx C 模块, 增加 mTLS 特性
+    # ref: https://github.com/api7/apisix-build-tools/blob/master/build-apisix-openresty.sh
     wget https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-openresty.sh
     chmod +x build-apisix-openresty.sh
     ./build-apisix-openresty.sh latest

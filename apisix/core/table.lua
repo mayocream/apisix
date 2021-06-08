@@ -42,8 +42,10 @@ local _M = {
 setmetatable(_M, {__index = table})
 
 
+-- 自行构建 index 插入 table, 比 table.insert 效率高
 function _M.insert_tail(tab, ...)
     local idx = #tab
+    -- 遍历输入的参数
     for i = 1, select('#', ...) do
         idx = idx + 1
         tab[idx] = select(i, ...)

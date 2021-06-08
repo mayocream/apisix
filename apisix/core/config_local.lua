@@ -21,6 +21,7 @@ local file = require("apisix.cli.file")
 local _M = {}
 
 
+-- 包级别缓存
 local config_data
 
 

@@ -15,7 +15,9 @@
 -- limitations under the License.
 --
 local config_local   = require("apisix.core.config_local")
+-- 扩展的 string 库
 local core_str       = require("apisix.core.string")
+-- 扩展的 table 库
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
@@ -238,6 +240,7 @@ function _M.gethostname()
 end
 
 
+-- 把 sleep 拆分为多个步骤, 每次一秒
 local function sleep(sec)
     if sec <= max_sleep_interval then
         return ngx_sleep(sec)

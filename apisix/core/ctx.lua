@@ -19,7 +19,9 @@ local core_tab     = require("apisix.core.table")
 local request      = require("apisix.core.request")
 local log          = require("apisix.core.log")
 local config_local = require("apisix.core.config_local")
+-- table 池
 local tablepool    = require("tablepool")
+-- TODO resty.ngxvar 从哪里加载的 
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
