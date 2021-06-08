@@ -22,7 +22,7 @@ if not local_conf then
     error("failed to parse yaml config: " .. err)
 end
 
-local config_center = local_conf.apisix and local_conf.apisix.config_center
+local config_center = local_conf.apisix and local_conf.apisix.config_center -- etcd / yaml
                       or "etcd"
 log.info("use config_center: ", config_center)
 local config = require("apisix.core.config_" .. config_center)

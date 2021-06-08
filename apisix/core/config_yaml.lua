@@ -21,6 +21,8 @@ local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
+-- lua file system lib
+-- ref: https://github.com/keplerproject/luafilesystem
 local lfs          = require("lfs")
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert

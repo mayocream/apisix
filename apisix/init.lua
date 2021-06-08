@@ -90,7 +90,7 @@ function _M.http_init(args)
         core.log.error("failed to enable privileged_agent: ", err)
     end
 
-    -- 从 etcd / 本地配置文件获取配置, etcd 有 init 函数
+    -- 从 etcd / yaml 本地配置文件获取配置, etcd 有 init 函数
     if core.config.init then
         local ok, err = core.config.init()
         if not ok then
