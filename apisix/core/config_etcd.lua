@@ -63,11 +63,13 @@ local mt = {
 }
 
 
+-- 获取一个 key
 local function getkey(etcd_cli, key)
     if not etcd_cli then
         return nil, "not inited"
     end
 
+    -- 读取 key
     local res, err = etcd_cli:readdir(key)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
@@ -87,6 +89,7 @@ local function getkey(etcd_cli, key)
 end
 
 
+-- 封装, 读取 key
 local function readdir(etcd_cli, key, formatter)
     if not etcd_cli then
         return nil, "not inited"
@@ -157,6 +160,7 @@ local function short_key(self, str)
 end
 
 
+-- 加载数据
 local function load_full_data(self, dir_res, headers)
     local err
     local changed = false
@@ -487,7 +491,9 @@ local get_etcd
 do
     local etcd_cli
 
+    -- 创建 etcd cli
     function get_etcd()
+        -- 获取单例
         if etcd_cli ~= nil then
             return etcd_cli
         end
@@ -589,6 +595,7 @@ function _M.new(key, opts)
         return nil, err
     end
 
+    -- etcd 重新同步事件 5 秒, 与 Kong 重新 poll db 数据一致
     local etcd_conf = local_conf.etcd
     local prefix = etcd_conf.prefix
     local resync_delay = etcd_conf.resync_delay
@@ -625,17 +632,20 @@ function _M.new(key, opts)
     }, mt)
 
     if automatic then
+        -- timer 定时获取数据
         if not key then
             return nil, "missing `key` argument"
         end
 
         if loaded_configuration[key] then
             local res = loaded_configuration[key]
+            -- 清空 table
             loaded_configuration[key] = nil -- tried to load
 
             log.notice("use loaded configuration ", key)
 
             local dir_res, headers = res.body, res.headers
+            -- 加载数据
             load_full_data(obj, dir_res, headers)
         end
 
@@ -696,7 +706,10 @@ function _M.server_version(self)
 end
 
 
+-- 创建格式化 formatter
 local function create_formatter(prefix)
+    -- 返回闭包函数, 对 etcd 返回的结果进行格式化
+    -- 格式个毛, 这就是个 hook 函数
     return function (res)
         res.body.nodes = {}
 
@@ -711,6 +724,7 @@ local function create_formatter(prefix)
         local curr_key
         for _, item in ipairs(res.body.kvs) do
             if curr_dir_data then
+                -- 将匹配的内容插入 table
                 if core_str.has_prefix(item.key, curr_key) then
                     table.insert(curr_dir_data, etcd_apisix.kvs_to_node(item))
                     goto CONTINUE
@@ -719,6 +733,7 @@ local function create_formatter(prefix)
                 curr_dir_data = nil
             end
 
+            -- 截取 prefix 后的 key
             local key = sub_str(item.key, #prefix + 1)
             if dirs[key] then
                 -- single item
@@ -727,7 +742,8 @@ local function create_formatter(prefix)
                     headers = res.headers,
                 }
             else
-                local key = sub_str(item.key, #prefix + 1, #item.key - 1)
+                -- 前缀一致
+                local key = sub_str(item.key, #prefix + 1, #item.key - 1) -- 去掉末尾的 /
                 -- ensure the same key hasn't been handled as single item
                 if dirs[key] and not loaded_configuration[key] then
                     loaded_configuration[key] = {
@@ -749,6 +765,7 @@ local function create_formatter(prefix)
 end
 
 
+-- 初始化 etcd
 function _M.init()
     local local_conf, err = config_local.local_conf()
     if not local_conf then
@@ -759,6 +776,7 @@ function _M.init()
         return true
     end
 
+    -- 获取 etcd cli
     local etcd_cli, err = get_etcd()
     if not etcd_cli then
         return nil, "failed to start a etcd instance: " .. err
@@ -766,6 +784,7 @@ function _M.init()
 
     local etcd_conf = local_conf.etcd
     local prefix = etcd_conf.prefix
+    -- 加载 etcd 所有数据到 lua table 中, 单例模式
     local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
     if not res then
         return nil, err

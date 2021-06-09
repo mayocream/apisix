@@ -52,6 +52,7 @@ end
 
 -- attach common methods if the router doesn't provide its custom implementation
 local function attach_http_router_common_methods(http_router)
+    -- 看起来不需要
     if http_router.routes == nil then
         http_router.routes = function ()
             if not http_router.user_routes then
@@ -65,6 +66,7 @@ local function attach_http_router_common_methods(http_router)
 
     if http_router.init_worker == nil then
         http_router.init_worker = function (filter)
+            -- 添加路由
             http_router.user_routes = http_route.init_worker(filter)
         end
     end
@@ -87,6 +89,7 @@ function _M.http_init_worker()
     local router_http = require("apisix.http.router." .. router_http_name)
     -- 修改 router 的 table
     attach_http_router_common_methods(router_http)
+    -- 初始化路由
     router_http.init_worker(filter)
     _M.router_http = router_http
 

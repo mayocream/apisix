@@ -267,7 +267,7 @@ function _M.init(env, args)
         end
 
 
-        -- ETCD 的 PREFIX
+        -- 初始化 etcd prefix
         local dirs = {}
         for name in pairs(constants.HTTP_ETCD_DIRECTORY) do
             dirs[name] = true

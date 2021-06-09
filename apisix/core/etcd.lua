@@ -24,6 +24,7 @@ local tonumber         = tonumber
 local _M = {}
 
 
+-- 创建 etcd cli
 -- this function create the etcd client instance used in the Admin API
 local function new()
     local local_conf, err = fetch_local_conf()
@@ -93,6 +94,7 @@ local function not_found(res)
 end
 
 
+-- 封装快捷访问函数
 -- When `is_dir` is true, returns the value of both the dir key and its descendants.
 -- Otherwise, return the value of key only.
 function _M.get_format(res, real_key, is_dir, formatter)
@@ -122,6 +124,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
     end
 
     if not is_dir then
+        -- 获取单个 key
         local key = res.body.kvs[1].key
         if key ~= real_key then
             return not_found(res)
