@@ -83,7 +83,9 @@ function _M.http_init_worker()
         router_ssl_name = conf.apisix.router.ssl or router_ssl_name
     end
 
+    -- 创建 router 实例
     local router_http = require("apisix.http.router." .. router_http_name)
+    -- 修改 router 的 table
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http

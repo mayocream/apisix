@@ -121,6 +121,7 @@ local function check_route(route)
 end
 
 
+-- 初始化 router
 function _M.init_worker(filter)
     local user_routes, err = core.config.new("/routes", {
             automatic = true,
