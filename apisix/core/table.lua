@@ -63,9 +63,7 @@ end
 
 
 function _M.try_read_attr(tab, ...)
-    local count = select('#', ...)
-
-    for i = 1, count do
+    for i = 1, select('#', ...) do
         local attr = select(i, ...)
         if type(tab) ~= "table" then
             return nil
@@ -123,8 +121,7 @@ do
     local copied_recorder = {}
 
     function deepcopy(orig)
-        local orig_type = type(orig)
-        if orig_type ~= 'table' then
+        if type(orig) ~= 'table' then
             return orig
         end
 
@@ -212,22 +209,16 @@ end
 
 -- Compare two elements, including their descendants
 local function deep_eq(a, b)
-    local type_a = type(a)
-    local type_b = type(b)
-
-    if type_a ~= 'table' or type_b ~= 'table' then
+    if type(a) ~= 'table' or type(b) ~= 'table' then
         return a == b
     end
 
-    local n_a = nkeys(a)
-    local n_b = nkeys(b)
-    if n_a ~= n_b then
+    if nkeys(a) ~= nkeys(b) then
         return false
     end
 
     for k, v_a in pairs(a) do
-        local v_b = b[k]
-        local eq = deep_eq(v_a, v_b)
+        local eq = deep_eq(v_a, b[k])
         if not eq then
             return false
         end

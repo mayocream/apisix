@@ -24,9 +24,9 @@ do
         no_param_match = true
     }
 
-function _M.new(routes)
-    return resty_router.new(routes, router_opts)
-end
+    function _M.new(routes)
+        return resty_router.new(routes, router_opts)
+    end
 
 end
 
