@@ -582,6 +582,7 @@ local function _automatic_fetch(premature, self)
 end
 
 
+-- TODO etcd 流程分析
 function _M.new(key, opts)
     local local_conf, err = config_local.local_conf()
     if not local_conf then

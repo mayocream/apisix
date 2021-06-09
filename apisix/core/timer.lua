@@ -48,6 +48,7 @@ local function _internal(timer)
     until timer.each_ttl <= 0 or now() >= timer.start_time + timer.each_ttl
 end
 
+-- 封装的 tiemr 运行函数, self 是 opts
 local function run_timer(premature, self)
     if self.running or premature then
         return
@@ -98,6 +99,6 @@ function _M.new(name, callback_fun, opts)
 
     return timer
 end
-
+    
 
 return _M

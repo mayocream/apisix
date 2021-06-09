@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local require = require
+-- 使用压缩字典树路由匹配
+-- ref: https://github.com/api7/lua-resty-radixtree
 local radixtree = require("resty.radixtree")
 local router = require("apisix.utils.router")
 local core = require("apisix.core")

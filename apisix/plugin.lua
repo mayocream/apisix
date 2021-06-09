@@ -51,6 +51,7 @@ local _M = {
 }
 
 
+-- 插件默认配置
 local function plugin_attr(name)
     -- TODO: get attr from synchronized data
     local local_conf = core.config.local_conf()
@@ -71,37 +72,45 @@ local function unload_plugin(name, is_stream_plugin)
     end
 
     local old_plugin = pkg_loaded[pkg_name]
+    -- 销毁 callback 函数
     if old_plugin and type(old_plugin.destroy) == "function" then
         old_plugin.destroy()
     end
 
+    -- 从 lua 全局包中移除
     pkg_loaded[pkg_name] = nil
 end
 
 
+-- 加载插件
 local function load_plugin(name, plugins_list, is_stream_plugin)
+    -- 构建插件 lua 包名
     local pkg_name = "apisix.plugins." .. name
     if is_stream_plugin then
         pkg_name = "apisix.stream.plugins." .. name
     end
 
+    -- 调用 require 加载包, pcall 包裹防止 panic
     local ok, plugin = pcall(require, pkg_name)
     if not ok then
         core.log.error("failed to load plugin [", name, "] err: ", plugin)
         return
     end
 
+    -- 插件必须有执行优先级属性
     if not plugin.priority then
         core.log.error("invalid plugin [", name,
                         "], missing field: priority")
         return
     end
 
+    -- 插件必须有 version 属性
     if not plugin.version then
         core.log.error("invalid plugin [", name, "] missing field: version")
         return
     end
 
+    -- 插件必须有 schema 字段
     if type(plugin.schema) ~= "table" then
         core.log.error("invalid plugin [", name, "] schema field")
         return
@@ -112,8 +121,10 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     end
 
     local properties = plugin.schema.properties
+    -- 注入的 schema 配置
     local plugin_injected_schema = core.schema.plugin_injected_schema
 
+    -- 检查预留属性
     if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
         if properties.disable then
             core.log.error("invalid plugin [", name,
@@ -126,9 +137,12 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     end
 
     plugin.name = name
+    -- 插件的默认配置
     plugin.attr = plugin_attr(name)
+    -- 插件置入 table 中
     core.table.insert(plugins_list, plugin)
 
+    -- 执行插件 init
     if plugin.init then
         plugin.init()
     end
@@ -137,6 +151,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
 end
 
 
+-- 加载插件
 local function load(plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
@@ -147,6 +162,7 @@ local function load(plugin_names)
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
+    -- 移除已经存在的 module
     for name in pairs(local_plugins_hash) do
         unload_plugin(name)
     end
@@ -154,15 +170,18 @@ local function load(plugin_names)
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
+    -- 加载插件
     for name in pairs(processed) do
         load_plugin(name, local_plugins)
     end
 
+    -- 插件排序, priority 越高的插件越先执行, 与 Kong 同样
     -- sort by plugin's priority
     if #local_plugins > 1 then
         sort_tab(local_plugins, sort_plugin)
     end
 
+    -- 打印调试日志
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
         if local_conf and local_conf.apisix
@@ -179,6 +198,7 @@ local function load(plugin_names)
 end
 
 
+-- 加载 stream 模式的插件, 加载流程与 http 模式完全相同
 local function load_stream(plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
@@ -228,6 +248,7 @@ function _M.load(config)
     local stream_plugin_names
 
     if not config then
+        -- 加载插件列表
         -- called during starting or hot reload in admin
         local_conf = core.config.local_conf(true)
         http_plugin_names = local_conf.plugins
@@ -470,12 +491,14 @@ do
 end
 
 
+-- 插件初始化
 function _M.init_worker()
     -- some plugins need to be initialized in init* phases
     if ngx.config.subsystem == "http" then
         require("apisix.plugins.prometheus.exporter").init()
     end
 
+    -- 加载插件并执行插件 init 函数
     _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then

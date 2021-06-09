@@ -29,6 +29,7 @@ local timers = {}
 local _M = {}
 
 
+-- worker 默认后台运行的 timer, 执行各种后台任务 
 local function background_timer()
     if core.table.nkeys(timers) == 0 then
         return
@@ -38,6 +39,7 @@ local function background_timer()
     for name, timer in pairs(timers) do
         core.log.info("run timer[", name, "]")
 
+        -- 开启协程执行
         local th, err = thread_spawn(timer)
         if not th then
             core.log.error("failed to spawn thread for timer [", name, "]: ", err)

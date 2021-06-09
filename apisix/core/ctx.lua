@@ -21,7 +21,7 @@ local log          = require("apisix.core.log")
 local config_local = require("apisix.core.config_local")
 -- table 池
 local tablepool    = require("tablepool")
--- TODO resty.ngxvar 从哪里加载的 
+-- resty.ngxvar 的 Nginx C 扩展实际上没有安装, 最终没有调用 ffi, 而是使用 resty.core 的 ngx.var 访问
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
@@ -111,8 +111,10 @@ end
 
 
 do
+    -- 获取特殊 var 类型的方法
     local var_methods = {
         method = ngx.req.get_method,
+        -- ref: https://github.com/cloudflare/lua-resty-cookie
         cookie = function () return ck:new() end
     }
 
@@ -135,7 +137,11 @@ do
     }
 
     local mt = {
+        -- 重载 hash 元方法
+        -- t 是 self
         __index = function(t, key)
+
+            -- 若 cache table 存在直接返回
             local cached = t._cache[key]
             if cached ~= nil then
                 return cached
@@ -146,11 +152,13 @@ do
             end
 
             local val
+            -- 如果是特殊类型, 使用特定方法获取
             local method = var_methods[key]
             if method then
                 val = method()
 
             elseif core_str.has_prefix(key, "cookie_") then
+                -- 通过 var_methods 访问到 resty.cookie
                 local cookie = t.cookie
                 if cookie then
                     local err
@@ -164,6 +172,7 @@ do
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
+                -- 最终通过 ngx.var 获取
                 val = get_var(key, t._request)
 
             elseif core_str.has_prefix(key, "graphql_") then
@@ -200,6 +209,7 @@ do
                 t._cache[key] = val
             end
 
+            -- 为空返回 nil
             return val
         end,
 
@@ -214,13 +224,18 @@ do
     }
 
 function _M.set_vars_meta(ctx)
+    -- 从 table 池中获取/创建一个 hash 长度为 32 的 table
     local var = tablepool.fetch("ctx_var", 0, 32)
     if not var._cache then
         var._cache = {}
     end
 
+    -- 通过 resty.core.base 获取原始 request C 指针 (?)
+    -- ref: https://github.com/openresty/lua-resty-core/blob/master/lib/resty/core/base.lua
     var._request = get_request()
+    -- 绑定元表
     setmetatable(var, mt)
+    -- 缓存到 ngx ctx 中
     ctx.var = var
 end
 

@@ -21,7 +21,8 @@ local ffi         = require("ffi")
 local C           = ffi.C
 local ffi_cast    = ffi.cast
 
-
+-- ref: https://www.cplusplus.com/reference/cstring/memcmp/
+-- ref: https://www.tutorialspoint.com/c_standard_library/c_function_memcmp.htm
 ffi.cdef[[
     int memcmp(const void *s1, const void *s2, size_t n);
 ]]
@@ -50,6 +51,7 @@ function _M.has_prefix(s, prefix)
     if #s < #prefix then
         return false
     end
+    -- 比较 s, prefix 内存地址的前 n (#prefix) 长度是否相同
     local rc = C.memcmp(s, prefix, #prefix)
     return rc == 0
 end

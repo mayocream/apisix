@@ -75,3 +75,4 @@ ci/openwhisk-utilities/
 *.tgz
 release/*
 html/*
+test-nginx/

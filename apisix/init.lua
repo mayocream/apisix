@@ -67,7 +67,7 @@ local _M = {version = 0.4}
 -- 4. dns client 初始化
 -- 5. 生成节点 id
 -- 6. 开启 openresty 特权进程
--- 7. 读取配置文件 (本地文件/etcd)
+-- 7. 读取配置文件并校验有效性 (本地文件/etcd)
 function _M.http_init(args)
     require("resty.core")
 
@@ -129,9 +129,10 @@ function _M.http_init_worker()
     load_balancer = require("apisix.balancer")
     -- TODO admin 流程分析
     require("apisix.admin.init").init_worker()
-
+    -- 注册全局 timer
     require("apisix.timers").init_worker()
 
+    -- 加载所有插件并执行插件 init
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
