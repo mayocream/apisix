@@ -658,6 +658,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
+    -- set_by_lua
+    -- preread_by_lua
+    -- access_by_lua
+    -- rewrite_by_lua
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
@@ -675,6 +679,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
             end
         end
+        -- 执行完退出
         return api_ctx
     end
 

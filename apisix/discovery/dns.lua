@@ -44,6 +44,7 @@ function _M.nodes(service_name)
     local host, port = core.utils.parse_addr(service_name)
     core.log.info("discovery dns with host ", host, ", port ", port)
 
+    -- 解析 dns
     local records, err = dns_client:resolve(host, core.dns_client.RETURN_ALL)
     if not records then
         return nil, err
@@ -81,6 +82,7 @@ function _M.init_worker()
         order = {"last", "A", "AAAA", "SRV", "CNAME"},
     }
 
+    -- 创建 dns client
     local client, err = core.dns_client.new(opts)
     if not client then
         error("failed to init the dns client: ", err)

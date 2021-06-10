@@ -337,6 +337,9 @@ local function get_upstream_by_id(up_id)
 end
 
 
+-- access_by_lua 阶段, apisix 没有 rewrite_by_lua
+-- ref: https://github.com/apache/apisix/issues/1120
+-- ref: https://github.com/apache/apisix/issues/1120#issuecomment-584949073
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
@@ -352,10 +355,13 @@ function _M.http_access_phase()
         end
     end
 
+    -- 从 table 缓存池中获取 table
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    -- 将 table 储存在 ngx.ctx 中, 下一个阶段共享
     ngx_ctx.api_ctx = api_ctx
 
+    -- 绑定 metatable 
     core.ctx.set_vars_meta(api_ctx)
 
     local uri = api_ctx.var.uri
@@ -367,6 +373,7 @@ function _M.http_access_phase()
         end
     end
 
+    -- 匹配 admin api
     if router.api.has_route_not_under_apisix() or
         core.string.has_prefix(uri, "/apisix/")
     then
@@ -377,6 +384,7 @@ function _M.http_access_phase()
         end
     end
 
+    -- router 路由匹配
     router.router_http.match(api_ctx)
 
     -- run global rule
@@ -405,6 +413,7 @@ function _M.http_access_phase()
         route = plugin_config.merge(route, conf)
     end
 
+    -- 获取对应的 service
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
@@ -437,9 +446,11 @@ function _M.http_access_phase()
         script.load(route, api_ctx)
         script.run("access", api_ctx)
     else
+        -- 插件过滤, 遍历插件列表, 匹配开启的插件, O(n)
         local plugins = plugin.filter(route)
         api_ctx.plugins = plugins
 
+        -- fake 执行 rewrite 阶段
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
@@ -457,6 +468,7 @@ function _M.http_access_phase()
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
             end
         end
+        -- 执行 access 阶段
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
@@ -494,6 +506,7 @@ function _M.http_access_phase()
                                    or route_val.upstream
     end
 
+    -- websocket 特殊处理
     if enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
@@ -504,12 +517,14 @@ function _M.http_access_phase()
         api_ctx.upstream_scheme = "grpc"
     end
 
+    -- 获取 upstream 节点
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)
         core.response.exit(code)
     end
 
+    -- 负载均衡
     local server, err = load_balancer.pick_server(route, api_ctx)
     if not server then
         core.log.error("failed to pick server: ", err)
@@ -703,6 +718,7 @@ function _M.http_log_phase()
 end
 
 
+-- 负载均衡
 function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then

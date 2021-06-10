@@ -253,6 +253,7 @@ end
 _M.pick_server = pick_server
 
 
+-- 调用上游接口
 function _M.run(route, ctx)
     local server, err
 

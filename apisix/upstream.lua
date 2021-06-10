@@ -81,6 +81,7 @@ end
 _M.get_healthchecker_name = get_healthchecker_name
 
 
+-- 创建健康检查
 local function create_checker(upstream)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
@@ -225,6 +226,7 @@ function _M.set_by_route(route, api_ctx)
     end
     -- core.log.info("up_conf: ", core.json.delay_encode(up_conf, true))
 
+    -- 如果 serivce host 是域名, 通过 discovery 发现, dns 解析
     if up_conf.service_name then
         if not discovery then
             return 500, "discovery is uninitialized"
@@ -286,6 +288,7 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
+    -- 健康检查
     if nodes_count > 1 then
         local checker = fetch_healthchecker(up_conf)
         api_ctx.up_checker = checker
