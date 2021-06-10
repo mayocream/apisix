@@ -636,6 +636,7 @@ end
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
+    -- 默认没有
     local cmd = core.table.try_read_attr(local_conf, "ext-plugin", "cmd")
     if not cmd then
         return

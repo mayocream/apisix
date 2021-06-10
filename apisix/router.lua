@@ -27,7 +27,10 @@ local ipairs  = ipairs
 local _M = {version = 0.3}
 
 
-local function filter(route)
+-- 路由加载回调函数
+-- 1. 格式化
+-- 2. 解析 upstream
+local function filter(route) -- 参数为每个 route
     route.orig_modifiedIndex = route.modifiedIndex
     route.update_count = 0
 
@@ -44,6 +47,7 @@ local function filter(route)
         end
     end
 
+    -- 解析 upstream
     apisix_upstream.filter_upstream(route.value.upstream, route)
 
     core.log.info("filter route: ", core.json.delay_encode(route, true))
@@ -74,6 +78,12 @@ end
 
 
 -- router 初始化
+-- 1. 加载不同模式的 router (uri/sni), 引入不同的 lua 库
+-- 2. 创建 router 实例
+-- 3. 添加初始化回调
+-- 4. etcd 获取数据并执行回调 (后台自动更新)
+-- 5. filter callback 格式化, 解析 upstream
+-- 6. 修改 router user_routes 数据 (router match 使用)
 function _M.http_init_worker()
     local conf = core.config.local_conf()
     -- 默认的匹配模式
@@ -90,6 +100,9 @@ function _M.http_init_worker()
     -- 修改 router 的 table
     attach_http_router_common_methods(router_http)
     -- 初始化路由
+    -- 调用 apisix.http.route.init_worker 方法
+    -- 从 etcd 获取数据并执行回调
+    -- filter 为格式化, 解析 upstream
     router_http.init_worker(filter)
     _M.router_http = router_http
 

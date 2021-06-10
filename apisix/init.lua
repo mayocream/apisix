@@ -52,6 +52,7 @@ if ngx.config.subsystem == "http" then
     control_api_router = require("apisix.control.router")
 end
 
+-- 全局单例 balancer
 local load_balancer
 local local_conf
 local ver_header = "APISIX/" .. core.version.VERSION
@@ -101,6 +102,17 @@ end
 
 
 -- init_worker_by_lua HTTP 模式
+-- 1. random seed 初始化
+-- 2. 外部服务发现 (默认没有开启, consul, dubbo)
+-- 3. 初始化负载均衡器 balancer (HTTP/Upstream) 创建 LRU 缓存
+-- 4. 加载 Admin API
+-- 5. 创建后台 timer
+-- 6. 加载所有插件并执行插件 init 方法
+-- 7. 从 etcd 获取 routes/services/upstreams
+--    a. 创建 router (uri/sni)
+--    b. 挂载 filter 回调函数
+--    c. 数据格式化
+--    d. timer watch etcd 事件变化执行回调
 function _M.http_init_worker()
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
@@ -134,9 +146,14 @@ function _M.http_init_worker()
 
     -- 加载所有插件并执行插件 init
     plugin.init_worker()
+    -- 初始化 router, 并加载 routes
     router.http_init_worker()
+
+    -- 初始化 services, 加载 services
     require("apisix.http.service").init_worker()
+    -- 加载插件配置
     plugin_config.init_worker()
+    -- consumer 加载
     require("apisix.consumer").init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
@@ -144,6 +161,7 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
+    -- upstreams 加载
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 

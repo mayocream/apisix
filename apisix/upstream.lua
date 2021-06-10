@@ -434,7 +434,9 @@ function _M.check_upstream_conf(conf)
 end
 
 
+-- upstream 加载
 local function filter_upstream(value, parent)
+    -- 为空直接返回
     if not value then
         return
     end
@@ -445,6 +447,7 @@ local function filter_upstream(value, parent)
         return
     end
 
+    -- upstream 支持 array 和 map 两种类型, 进行数据转换
     local nodes = value.nodes
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
@@ -482,6 +485,7 @@ function _M.init_worker()
             automatic = true,
             item_schema = core.schema.upstream,
             -- also check extra fields in the DP side
+            -- 数据格式校验
             checker = function (item, schema_type)
                 return check_upstream_conf(true, item)
             end,

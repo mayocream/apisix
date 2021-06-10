@@ -17,6 +17,7 @@
 local core   = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local plugin_checker = require("apisix.plugin").plugin_checker
+-- services 数据储存在 module 下的 table 中, 单例
 local services
 local error = error
 

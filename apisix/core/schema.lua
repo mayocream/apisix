@@ -50,6 +50,7 @@ local function get_validator(schema)
     return validator, nil
 end
 
+-- 校验数据格式
 function _M.check(schema, json)
     local validator, err = get_validator(schema)
 

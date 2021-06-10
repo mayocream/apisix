@@ -474,10 +474,13 @@ do
 
     function init_plugins_syncer()
         local err
+        -- 储存插件的配置信息, 一条 kv
         plugins_conf, err = core.config.new("/plugins", {
-            automatic = true,
+            automatic = true, -- 后台创建 timer watch etcd 自动同步配置
             item_schema = core.schema.plugins,
             single_item = true,
+            -- filter 方法中访问到 etcd kv 的 item, 这里进行插件加载的回调
+            -- 每次 etcd 插件配置变动, 自动同步
             filter = function(item)
                 -- we need to pass 'item' instead of plugins_conf because
                 -- the latter one is nil at the first run

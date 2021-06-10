@@ -124,7 +124,7 @@ end
 -- 初始化 router
 function _M.init_worker(filter)
     local user_routes, err = core.config.new("/routes", {
-            automatic = true,
+            automatic = true, -- 自动同步
             item_schema = core.schema.route,
             checker = check_route,
             filter = filter,

@@ -160,18 +160,25 @@ local function short_key(self, str)
 end
 
 
--- 加载数据
+-- 加载数据到 table
+-- 1. 创建 table 缓存新数据
+-- 2. jsonschema 校验数据格式
+-- 3. 自定义 check 函数检查数据格式
+-- 4. 自定义 filter 函数过滤数据
+-- 5. etcd 更新 mvcc 版本
 local function load_full_data(self, dir_res, headers)
     local err
     local changed = false
 
     if self.single_item then
+        -- table size 为 1
         self.values = new_tab(1, 0)
         self.values_hash = new_tab(0, 1)
 
         local item = dir_res
         local data_valid = item.value ~= nil
 
+        -- schema 校验数据格式
         if data_valid and self.item_schema then
             data_valid, err = check_schema(self.item_schema, item.value)
             if not data_valid then
@@ -180,6 +187,7 @@ local function load_full_data(self, dir_res, headers)
             end
         end
 
+        -- 自定义 check 函数
         if data_valid and self.checker then
             data_valid, err = self.checker(item.value)
             if not data_valid then
@@ -191,6 +199,7 @@ local function load_full_data(self, dir_res, headers)
         if data_valid then
             changed = true
             insert_tab(self.values, item)
+            -- ??
             self.values_hash[self.key] = #self.values
 
             item.clean_handlers = {}
@@ -200,6 +209,7 @@ local function load_full_data(self, dir_res, headers)
             end
         end
 
+        -- etcd 更新 kv mvcc 版本
         self:upgrade_version(item.modifiedIndex)
 
     else
@@ -282,6 +292,7 @@ function _M.upgrade_version(self, new_ver)
 end
 
 
+-- 同步数据
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -319,6 +330,7 @@ local function sync_data(self)
         return true
     end
 
+    -- watch dir 变化
     local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
@@ -394,6 +406,7 @@ local function sync_data(self)
         local pre_index = self.values_hash[key]
         if pre_index then
             local pre_val = self.values[pre_index]
+            -- 数据更新回调函数
             if pre_val and pre_val.clean_handlers then
                 for _, clean_handler in ipairs(pre_val.clean_handlers) do
                     clean_handler(pre_val)
@@ -530,6 +543,7 @@ do
 end
 
 
+-- 定时器自动同步 etcd 数据
 local function _automatic_fetch(premature, self)
     if premature then
         return
@@ -549,6 +563,7 @@ local function _automatic_fetch(premature, self)
                 self.etcd_cli = etcd_cli
             end
 
+            -- 同步数据
             local ok, err = sync_data(self)
             if err then
                 if err ~= "timeout" and err ~= "Key not found"
@@ -582,13 +597,14 @@ local function _automatic_fetch(premature, self)
         end
     end
 
+    -- 进行下一次循环
     if not exiting() and self.running then
         ngx_timer_at(0, _automatic_fetch, self)
     end
 end
 
 
--- TODO etcd 流程分析
+-- etcd 配置创建
 function _M.new(key, opts)
     local local_conf, err = config_local.local_conf()
     if not local_conf then
@@ -637,6 +653,7 @@ function _M.new(key, opts)
             return nil, "missing `key` argument"
         end
 
+        -- 从单例 table 获取 etcd 数据, 进行处理
         if loaded_configuration[key] then
             local res = loaded_configuration[key]
             -- 清空 table
@@ -645,10 +662,11 @@ function _M.new(key, opts)
             log.notice("use loaded configuration ", key)
 
             local dir_res, headers = res.body, res.headers
-            -- 加载数据
+            -- 加载数据并校验数据, 过滤数据
             load_full_data(obj, dir_res, headers)
         end
 
+        -- 创建定时器自动同步
         ngx_timer_at(0, _automatic_fetch, obj)
 
     else

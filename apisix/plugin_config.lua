@@ -20,6 +20,7 @@ local pairs = pairs
 local error = error
 
 
+-- 插件配置储存在全局单例的 table
 local plugin_configs
 
 

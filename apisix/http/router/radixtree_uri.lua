@@ -28,7 +28,7 @@ do
     local match_opts = {}
     
     function _M.match(api_ctx)
-        -- 从 module 的 user_routes 属性获取路由, 从外部添加
+        -- 从 module 的 user_routes 属性获取路由, 在 etcd route 变化时回调添加
         local user_routes = _M.user_routes
         if not cached_version or cached_version ~= user_routes.conf_version then
             uri_router = base_router.create_radixtree_uri_router(user_routes.values,
