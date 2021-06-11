@@ -321,6 +321,7 @@ local function trace_plugins_info_for_debug(plugins)
 end
 
 
+-- 插件配置绑定
 function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
@@ -666,9 +667,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "header_filter"
         and phase ~= "body_filter"
     then
+        -- 遍历 step 为 2
         for i = 1, #plugins, 2 do
             local phase_func = plugins[i][phase]
             if phase_func then
+                -- i + 1 为插件的 conf 配置
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
                     if code >= 400 then
